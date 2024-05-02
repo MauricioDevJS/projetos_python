@@ -1,0 +1,44 @@
+import os
+from PyPDF2 import PdfReader, PdfWriter
+from tkinter.filedialog import askdirectory
+
+def extract_info_from_pdf(pdf_path):
+    # Abrir o PDF e extrair as informações de nome e data
+    reader = PdfReader(pdf_path)
+    first_page = reader.pages[0]
+    text = first_page.extract_text()
+    
+    # Extrair Nome Empresarial e Mês/Ano do texto
+    nome_empresarial = "Nome não encontrado"
+    mes_ano = "Data não encontrada"
+    for line in text.split('\n'):
+        if "Nome Empresarial:" in line:
+            nome_empresarial = line.split(":", 1)[1].strip()
+        elif "Mês/Ano:" in line:
+            # Extração específica do texto após "Mês/Ano:", incluindo todo mês e ano
+            mes_ano = line.split("Mês/Ano:")[1].strip()
+    
+    return nome_empresarial, mes_ano
+
+def rename_pdfs_in_folder(folder_path):
+    # Listar todos os arquivos PDF na pasta
+    for filename in os.listdir(folder_path):
+        if filename.endswith('.pdf'):
+            pdf_path = os.path.join(folder_path, filename)
+            nome_empresarial, mes_ano = extract_info_from_pdf(pdf_path)
+            new_filename = f"{nome_empresarial}_{mes_ano}.pdf".replace('/', '-').replace(' ', '_')
+            new_path = os.path.join(folder_path, new_filename)
+            
+            # Renomear o arquivo
+            reader = PdfReader(pdf_path)
+            writer = PdfWriter()
+            for page in reader.pages:
+                writer.add_page(page)
+            with open(new_path, 'wb') as f:
+                writer.write(f)
+            print(f"Renomeado: {filename} para {new_filename}")
+
+
+# Diretório onde estão os PDFs
+folder_path = askdirectory(title="Selecione a pasta para renomear PDF")
+rename_pdfs_in_folder(folder_path)
